@@ -15,18 +15,16 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraftforge.client.event.sound.SoundEvent;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class SoulboundHandler
-{
+public class SoulboundHandler {
 	private static final HashMap<PlayerEntity, SoulboundHandler> handlerMap = new HashMap<>();
 	private final PlayerEntity player;
-	//public ArrayList<ItemStack> finalItems = new ArrayList<>();
-	//public ArrayList<ItemEntity> drops = new ArrayList<>();
 
 	public static SoulboundHandler getOrCreateSoulboundHandler(PlayerEntity player) {
 		if (hasStoredDrops(player))
@@ -50,24 +48,19 @@ public class SoulboundHandler
 		return hasSerializedDrops(player);
 	}
 
-	private SoulboundHandler(PlayerEntity playerIn)
-	{
+	private SoulboundHandler(PlayerEntity playerIn) {
 		this.player = playerIn;
 	}
 
-	public void retainDrops(Collection<ItemEntity> eventDrops)
-	{
+	public void retainDrops(Collection<ItemEntity> eventDrops) {
 		List<ItemEntity> retainedDrops = Lists.newArrayList();
-		for(ItemEntity eventDrop : eventDrops)
-		{
+		for (ItemEntity eventDrop : eventDrops) {
 			ItemStack item = eventDrop.getItem();
-			if(item.isEnchanted() && EnchantmentHelper.getEnchantments(item).containsKey(EnchantmentList.SOULBOUND.get()))
-			{
+			if (item.isEnchanted() && EnchantmentHelper.getEnchantments(item).containsKey(EnchantmentList.SOULBOUND.get())) {
 				int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
 				double chance = SoulboundGlobals.saveChance + (SoulboundGlobals.additiveSaveChance * (level - 1));
 				double rng = Math.random();
-				if(rng < chance)
-				{
+				if (rng < chance) {
 					retainedDrops.add(eventDrop);
 				}
 			}
@@ -103,7 +96,7 @@ public class SoulboundHandler
 	private List<ItemStack> deserializeDrops() {
 		List<ItemStack> deserialized = Lists.newArrayList();
 		CompoundNBT soulData = this.player.getPersistentData().getCompound("SoulboundItems");
-		int counter = soulData.getInt("StoredStacks")-1;
+		int counter = soulData.getInt("StoredStacks") - 1;
 
 		for (int c = counter; c >= 0; c--) {
 			CompoundNBT nbt = soulData.getCompound("Stack" + c);
@@ -120,27 +113,29 @@ public class SoulboundHandler
 		return deserialized;
 	}
 
-	private ItemStack itemEditor(ItemStack item)
-	{
+	private ItemStack itemEditor(ItemStack item) {
 		int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
-		if(SoulboundGlobals.durabilityDrop)
-		{
-			double minimum = SoulboundGlobals.minimumDurabilityDrop - (SoulboundGlobals.additiveDurabilityDrop  * (level - 1));
-			if(minimum < 0) { minimum = 0; }
-			double maximum = SoulboundGlobals.maximumDurabilityDrop - (SoulboundGlobals.additiveDurabilityDrop  * (level - 1));
-			if(maximum < 0) { maximum = 0; }
+		if (SoulboundGlobals.durabilityDrop) {
+			double minimum = SoulboundGlobals.minimumDurabilityDrop - (SoulboundGlobals.additiveDurabilityDrop * (level - 1));
+			if (minimum < 0) {
+				minimum = 0;
+			}
+			double maximum = SoulboundGlobals.maximumDurabilityDrop - (SoulboundGlobals.additiveDurabilityDrop * (level - 1));
+			if (maximum < 0) {
+				maximum = 0;
+			}
 			double mode = SoulboundGlobals.modeDurabilityDrop - (SoulboundGlobals.additiveDurabilityDrop * (level - 1));
-			if(mode < 0) { mode = 0; }
+			if (mode < 0) {
+				mode = 0;
+			}
 
 			int newDurability = (int) (item.getMaxDamage() * this.triangularDistribution(minimum, maximum, mode));
-			if(item.attemptDamageItem(newDurability, this.player.getRNG(), (ServerPlayerEntity) this.player))
-			{
+			if (item.attemptDamageItem(newDurability, this.player.getRNG(), (ServerPlayerEntity) this.player)) {
 				if (this.player instanceof PlayerEntity) {
 					this.player.addStat(Stats.ITEM_BROKEN.get(item.getItem()));
 				}
 
-				if(SoulboundGlobals.breakItemOnZeroDurability)
-				{
+				if (SoulboundGlobals.breakItemOnZeroDurability) {
 					item.setDamage(item.getMaxDamage());
 					return item;
 				}
@@ -149,17 +144,14 @@ public class SoulboundHandler
 
 		}
 		double chance = SoulboundGlobals.dropLevel - (SoulboundGlobals.additiveDropChance * (level - 1));
-		if(!(Math.random() < chance))
+		if (!(Math.random() < chance))
 			return item;
-		if(level > 1)
-		{
+		if (level > 1) {
 			Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(item);
 			enchantments.remove(EnchantmentList.SOULBOUND.get());
 			enchantments.put(EnchantmentList.SOULBOUND.get(), level - 1);
 			EnchantmentHelper.setEnchantments(enchantments, item);
-		}
-		else
-		{
+		} else {
 			Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(item);
 			enchantments.remove(EnchantmentList.SOULBOUND.get());
 			EnchantmentHelper.setEnchantments(enchantments, item);
@@ -186,12 +178,15 @@ public class SoulboundHandler
 		List<ItemStack> retainedDrops = this.deserializeDrops();
 
 		boolean breakonce = false;
-		if(retainedDrops.isEmpty())
+		if (retainedDrops.isEmpty())
 			return;
 		for (ItemStack item : retainedDrops) {
-			if(item.getDamage() == item.getMaxDamage()) {
+			if (item.getDamage() == item.getMaxDamage()) {
 				if (breakonce) {
-					this.player.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0f, 1.0f); // this line of code isn't working. THIS CODE NEEDS WORK
+					// Of course it didn't work, dummy. It played sound for everyone EXCEPT player you call playSound on.
+					// This one will work tho, check out
+					this.player.world.playSound(null, this.player.getPosX(), this.player.getPosY(), this.player.getPosZ(), SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
+
 					breakonce = true;
 				}
 
