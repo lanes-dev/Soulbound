@@ -24,10 +24,13 @@ import java.util.*;
 
 public class SoulboundHandler {
 	private static final HashMap<PlayerEntity, SoulboundHandler> handlerMap = new HashMap<>();
+	public static final String soulboundTag = "SoulboundItems";
+	public static final String storedStacksTag = "StoredStacks";
+	public static final String stackTag = "Stack";
 	private final PlayerEntity player;
 
 	public static SoulboundHandler getOrCreateSoulboundHandler(PlayerEntity player) {
-		if (hasStoredDrops(player))
+		if (getSoulboundHandler(player) != null)
 			return getSoulboundHandler(player);
 		else
 			return createSoulboundHandler(player);
@@ -70,46 +73,55 @@ public class SoulboundHandler {
 			eventDrops.remove(dropItem);
 		});
 
+		System.out.println("Retained: " + retainedDrops);
+
 		this.serializeDrops(retainedDrops);
 	}
 
 	private void serializeDrops(Collection<ItemEntity> drops) {
-		CompoundNBT soulData = this.player.getPersistentData().getCompound("SoulboundItems");
-		soulData.putInt("StoredStacks", drops.size());
+		CompoundNBT soulData = new CompoundNBT();
+		soulData.putInt(storedStacksTag, drops.size());
 		int counter = 0;
 
 		for (ItemEntity drop : drops) {
 			ItemStack stack = this.itemEditor(drop.getItem()).copy();
 			if (stack != null) {
 				CompoundNBT serializedStack = stack.serializeNBT();
-				soulData.put("Stack" + counter, serializedStack);
+				soulData.put(stackTag + counter, serializedStack);
+				counter++;
 			}
-
-			counter++;
 		}
+
+		this.player.getPersistentData().put(soulboundTag, soulData);
+		System.out.println("Soul Data: " + soulData.toString());
+		System.out.println("Contains?: " + this.player.getPersistentData().contains(soulboundTag));
 	}
 
 	private static boolean hasSerializedDrops(PlayerEntity player) {
-		return player.getPersistentData().contains("SoulboundItems");
+		System.out.println("Has drops: " + player.getPersistentData().contains(soulboundTag));
+		return player.getPersistentData().contains(soulboundTag);
 	}
 
 	private List<ItemStack> deserializeDrops() {
 		List<ItemStack> deserialized = Lists.newArrayList();
-		CompoundNBT soulData = this.player.getPersistentData().getCompound("SoulboundItems");
-		int counter = soulData.getInt("StoredStacks") - 1;
+		CompoundNBT soulData = this.player.getPersistentData().getCompound(soulboundTag);
+		int counter = soulData.getInt(storedStacksTag) - 1;
+		System.out.println("Soul Data: " + soulData.toString());
 
 		for (int c = counter; c >= 0; c--) {
-			CompoundNBT nbt = soulData.getCompound("Stack" + c);
+			CompoundNBT nbt = soulData.getCompound(stackTag + c);
 			ItemStack stack = ItemStack.read(nbt);
 
 			if (!stack.isEmpty()) {
 				deserialized.add(stack);
 			}
 
-			soulData.remove("storedStack" + c);
+			soulData.remove(stackTag + c);
 		}
 
-		soulData.remove("SoulboundItems");
+		System.out.println("Contains?: " + this.player.getPersistentData().contains(soulboundTag));
+		this.player.getPersistentData().remove(soulboundTag);
+		System.out.println("Contains after removal?: " + this.player.getPersistentData().contains(soulboundTag));
 		return deserialized;
 	}
 
@@ -174,7 +186,7 @@ public class SoulboundHandler {
 			return b - Math.sqrt((1 - rand) * (b - a) * (b - c)); // RETURNS .50 - sqrt((1 - .50) * (.50 - .25) * (.50 - .33)) .354 (Nearing .33 with lesser values, with larger values it nears .50)
 	}
 
-	public void transferItems() {
+	public void transferItems(PlayerEntity rebornPlayer) {
 		List<ItemStack> retainedDrops = this.deserializeDrops();
 
 		boolean breakonce = false;
@@ -185,14 +197,16 @@ public class SoulboundHandler {
 				if (breakonce) {
 					// Of course it didn't work, dummy. It played sound for everyone EXCEPT player you call playSound on.
 					// This one will work tho, check out
-					this.player.world.playSound(null, this.player.getPosX(), this.player.getPosY(), this.player.getPosZ(), SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
+					rebornPlayer.world.playSound(null, rebornPlayer.getPosX(), rebornPlayer.getPosY(), rebornPlayer.getPosZ(), SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
 
 					breakonce = true;
 				}
 
 				continue;
 			}
-			this.player.inventory.addItemStackToInventory(item);
+			rebornPlayer.inventory.addItemStackToInventory(item);
 		}
+
+		handlerMap.remove(this.player);
 	}
 }
