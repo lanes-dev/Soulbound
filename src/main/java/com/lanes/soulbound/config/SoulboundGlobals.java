@@ -2,7 +2,7 @@ package com.lanes.soulbound.config;
 
 public class SoulboundGlobals {
 
-	// TODO This looks very wrong, but we can adress this later
+	// TODO This looks very wrong, but we can address this later
 
 	public static final int maximumLevel = SoulboundConfig.maximumLevel.get();
 

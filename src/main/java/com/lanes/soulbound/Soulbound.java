@@ -27,13 +27,13 @@ public class Soulbound
 	public Soulbound() {
 		instance = this;
 
-		ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ConfigSetup.server_config);
+		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigSetup.common_config);
 		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigSetup.client_config);
 
 		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
 		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::doClientStuff);
 
-		ConfigSetup.loadConfig(ConfigSetup.server_config, FMLPaths.CONFIGDIR.get().resolve("soulbound-server.toml").toString());
+		ConfigSetup.loadConfig(ConfigSetup.common_config, FMLPaths.CONFIGDIR.get().resolve("soulbound-common.toml").toString());
 		ConfigSetup.loadConfig(ConfigSetup.client_config, FMLPaths.CONFIGDIR.get().resolve("soulbound-client.toml").toString());
 
 		if(!SoulboundGlobals.enableMod)
