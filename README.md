@@ -10,4 +10,4 @@
 **Minecraft Version**: 1.16.1 -> 1.16.3
 
 
-**Forge Version**: 32.0.61 to 34.1.1
+**Forge Version**: 32.0.61+
