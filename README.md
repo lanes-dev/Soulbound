@@ -1,2 +1,13 @@
 # Soulbound-1.16.1
- soulbound mod code n' stuff
+
+
+**Dependencies**: None
+
+
+**Current Version**: 1.1.0
+
+
+**Minecraft Version**: 1.16.1 -> 1.16.3
+
+
+**Forge Version**: 32.0.61+
