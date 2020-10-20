@@ -24,16 +24,15 @@ import java.util.Collection;
 @Mod.EventBusSubscriber(modid = Soulbound.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class LootTables
 {
-    @SubscribeEvent
-    public static void bastionBridgeInject(LootTableLoadEvent event)
-    {
-        if(!event.isCanceled())
-        {
-            if(event.getName().equals(new ResourceLocation("minecraft", "chests/bastion_bridge")) || event.getName().equals(new ResourceLocation("minecraft", "chests/bastion_other"))
-            || event.getName().equals(new ResourceLocation("minecraft", "chests/bastion_treasure")) || event.getName().equals(new ResourceLocation("minecraft", "chests/end_city_treasure")))
-            {
-                event.getTable().addPool(LootPool.builder().addEntry(TableLootEntry.builder(new ResourceLocation(Soulbound.MOD_ID, "chests/soulbound_loot"))).build());
-            }
-        }
-    }
+	@SubscribeEvent
+	public static void bastionBridgeInject(LootTableLoadEvent event)
+	{
+		if(!event.isCanceled())
+		{
+			if(event.getName().equals(new ResourceLocation("minecraft", "chests/bastion_bridge")) || event.getName().equals(new ResourceLocation("minecraft", "chests/bastion_other"))
+					|| event.getName().equals(new ResourceLocation("minecraft", "chests/bastion_treasure")) || event.getName().equals(new ResourceLocation("minecraft", "chests/end_city_treasure"))) {
+				event.getTable().addPool(LootPool.builder().name("soulboundloot").addEntry(TableLootEntry.builder(new ResourceLocation(Soulbound.MOD_ID, "chests/soulbound_loot"))).build());
+			}
+		}
+	}
 }

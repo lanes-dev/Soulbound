@@ -20,39 +20,39 @@ import org.apache.logging.log4j.Logger;
 @Mod.EventBusSubscriber(modid = Soulbound.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Soulbound
 {
-    public static final Logger LOGGER = LogManager.getLogger();
-    public static final String MOD_ID = "soulbound";
-    public static Soulbound instance;
+	public static final Logger LOGGER = LogManager.getLogger();
+	public static final String MOD_ID = "soulbound";
+	public static Soulbound instance;
 
-    public Soulbound()
-    {
-        instance = this;
+	public Soulbound() {
+		instance = this;
 
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ConfigSetup.server_config);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigSetup.client_config);
+		ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ConfigSetup.server_config);
+		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigSetup.client_config);
 
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::doClientStuff);
+		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
+		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::doClientStuff);
 
-        ConfigSetup.loadConfig(ConfigSetup.server_config, FMLPaths.CONFIGDIR.get().resolve("soulbound-server.toml").toString());
-        ConfigSetup.loadConfig(ConfigSetup.client_config, FMLPaths.CONFIGDIR.get().resolve("soulbound-client.toml").toString());
+		ConfigSetup.loadConfig(ConfigSetup.server_config, FMLPaths.CONFIGDIR.get().resolve("soulbound-server.toml").toString());
+		ConfigSetup.loadConfig(ConfigSetup.client_config, FMLPaths.CONFIGDIR.get().resolve("soulbound-client.toml").toString());
 
-        if(!SoulboundGlobals.enableMod)
-        {
-            return;
-        }
+		if(!SoulboundGlobals.enableMod)
+			return;
 
-        EnchantmentList.ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
+		EnchantmentList.ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
 
-        MinecraftForge.EVENT_BUS.register(this);
-    }
+		MinecraftForge.EVENT_BUS.register(this);
+	}
 
-    public void ModCheck()
-    {
-        Loader.
-    }
+	public void ModCheck() {
+		//Loader.
+	}
 
-    private void setup(final FMLCommonSetupEvent event) { }
+	private void setup(final FMLCommonSetupEvent event) {
+		// NO-OP
+	}
 
-    private void doClientStuff(final FMLClientSetupEvent event){ }
+	private void doClientStuff(final FMLClientSetupEvent event){
+		// NO-OP
+	}
 }
