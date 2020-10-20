@@ -11,9 +11,11 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 public class EnchantmentList {
 
-    public static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, Soulbound.MOD_ID);
+	// This is weird but okay
 
-    public static final RegistryObject<Enchantment> SOULBOUND = ENCHANTMENTS.register("soulbound", () -> new EnchantmentSoulbound(Enchantment.Rarity.RARE, EnchantmentType.VANISHABLE, EquipmentSlotType.values()));
+	public static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, Soulbound.MOD_ID);
+
+	public static final RegistryObject<Enchantment> SOULBOUND = ENCHANTMENTS.register("soulbound", () -> new EnchantmentSoulbound(Enchantment.Rarity.RARE, EnchantmentType.VANISHABLE, EquipmentSlotType.values()));
 
 
 
