@@ -8,9 +8,11 @@ import net.minecraft.block.SoundType;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.MobEntity;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.stats.Stats;
@@ -73,8 +75,6 @@ public class SoulboundHandler {
 			eventDrops.remove(dropItem);
 		});
 
-		System.out.println("Retained: " + retainedDrops);
-
 		this.serializeDrops(retainedDrops);
 	}
 
@@ -93,12 +93,9 @@ public class SoulboundHandler {
 		}
 
 		this.player.getPersistentData().put(soulboundTag, soulData);
-		System.out.println("Soul Data: " + soulData.toString());
-		System.out.println("Contains?: " + this.player.getPersistentData().contains(soulboundTag));
 	}
 
 	private static boolean hasSerializedDrops(PlayerEntity player) {
-		System.out.println("Has drops: " + player.getPersistentData().contains(soulboundTag));
 		return player.getPersistentData().contains(soulboundTag);
 	}
 
@@ -106,7 +103,6 @@ public class SoulboundHandler {
 		List<ItemStack> deserialized = Lists.newArrayList();
 		CompoundNBT soulData = this.player.getPersistentData().getCompound(soulboundTag);
 		int counter = soulData.getInt(storedStacksTag) - 1;
-		System.out.println("Soul Data: " + soulData.toString());
 
 		for (int c = counter; c >= 0; c--) {
 			CompoundNBT nbt = soulData.getCompound(stackTag + c);
@@ -119,9 +115,7 @@ public class SoulboundHandler {
 			soulData.remove(stackTag + c);
 		}
 
-		System.out.println("Contains?: " + this.player.getPersistentData().contains(soulboundTag));
 		this.player.getPersistentData().remove(soulboundTag);
-		System.out.println("Contains after removal?: " + this.player.getPersistentData().contains(soulboundTag));
 		return deserialized;
 	}
 
@@ -194,10 +188,18 @@ public class SoulboundHandler {
 			return;
 		for (ItemStack item : retainedDrops) {
 			if (item.getDamage() == item.getMaxDamage()) {
-				if (breakonce) {
-					// Of course it didn't work, dummy. It played sound for everyone EXCEPT player you call playSound on.
-					// This one will work tho, check out
+				if (!breakonce) {
+					// I have tried different stuff, but it might be not possible to play sounds in clone event at all, as player
+					// isn't spawned into the world yet and has no definitive coordinates to play sound at. We need other event for that
+
 					rebornPlayer.world.playSound(null, rebornPlayer.getPosX(), rebornPlayer.getPosY(), rebornPlayer.getPosZ(), SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
+
+					/*
+					item.setDamage(item.getDamage()-1);
+					item.damageItem(Short.MAX_VALUE, rebornPlayer, p -> p.sendBreakAnimation(EquipmentSlotType.MAINHAND));
+
+					System.out.println("broken");
+					 */
 
 					breakonce = true;
 				}
