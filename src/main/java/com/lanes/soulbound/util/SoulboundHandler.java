@@ -12,6 +12,7 @@ import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvents;
@@ -22,18 +23,19 @@ import java.util.*;
 
 public class SoulboundHandler
 {
-	private static HashMap<PlayerEntity, SoulboundHandler> handlerMap = new HashMap<>();
-	public PlayerEntity player;
-	public ArrayList<ItemStack> finalItems = new ArrayList<>();
-	public ArrayList<ItemEntity> drops = new ArrayList<>();
+	private static final HashMap<PlayerEntity, SoulboundHandler> handlerMap = new HashMap<>();
+	private final PlayerEntity player;
+	//public ArrayList<ItemStack> finalItems = new ArrayList<>();
+	//public ArrayList<ItemEntity> drops = new ArrayList<>();
 
 	public static SoulboundHandler getOrCreateSoulboundHandler(PlayerEntity player) {
-		if (hasActiveSoulboundHandler(player))
+		if (hasStoredDrops(player))
 			return getSoulboundHandler(player);
 		else
 			return createSoulboundHandler(player);
 	}
 
+	@Nullable
 	public static SoulboundHandler getSoulboundHandler(PlayerEntity player) {
 		return handlerMap.get(player);
 	}
@@ -44,8 +46,8 @@ public class SoulboundHandler
 		return newHandler;
 	}
 
-	public static boolean hasActiveSoulboundHandler(PlayerEntity player) {
-		return handlerMap.get(player) != null;
+	public static boolean hasStoredDrops(PlayerEntity player) {
+		return hasSerializedDrops(player);
 	}
 
 	private SoulboundHandler(PlayerEntity playerIn)
@@ -53,12 +55,12 @@ public class SoulboundHandler
 		this.player = playerIn;
 	}
 
-	public void filterEnchantment(Collection<ItemEntity> retrievedDrops)
+	public void retainDrops(Collection<ItemEntity> eventDrops)
 	{
-		List<ItemEntity> needsRemoval = Lists.newArrayList();
-		for(ItemEntity retrievedDrop : retrievedDrops)
+		List<ItemEntity> retainedDrops = Lists.newArrayList();
+		for(ItemEntity eventDrop : eventDrops)
 		{
-			ItemStack item = retrievedDrop.getItem();
+			ItemStack item = eventDrop.getItem();
 			if(item.isEnchanted() && EnchantmentHelper.getEnchantments(item).containsKey(EnchantmentList.SOULBOUND.get()))
 			{
 				int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
@@ -66,18 +68,59 @@ public class SoulboundHandler
 				double rng = Math.random();
 				if(rng < chance)
 				{
-					this.finalItems.add(this.itemEditor(item).copy());
-					needsRemoval.add(retrievedDrop);
+					retainedDrops.add(eventDrop);
 				}
 			}
 		}
 
-		needsRemoval.forEach(dropItem -> {
-			retrievedDrops.remove(dropItem);
+		retainedDrops.forEach(dropItem -> {
+			eventDrops.remove(dropItem);
 		});
+
+		this.serializeDrops(retainedDrops);
 	}
 
-	public ItemStack itemEditor(ItemStack item)
+	private void serializeDrops(Collection<ItemEntity> drops) {
+		CompoundNBT soulData = this.player.getPersistentData().getCompound("SoulboundItems");
+		soulData.putInt("StoredStacks", drops.size());
+		int counter = 0;
+
+		for (ItemEntity drop : drops) {
+			ItemStack stack = this.itemEditor(drop.getItem()).copy();
+			if (stack != null) {
+				CompoundNBT serializedStack = stack.serializeNBT();
+				soulData.put("Stack" + counter, serializedStack);
+			}
+
+			counter++;
+		}
+	}
+
+	private static boolean hasSerializedDrops(PlayerEntity player) {
+		return player.getPersistentData().contains("SoulboundItems");
+	}
+
+	private List<ItemStack> deserializeDrops() {
+		List<ItemStack> deserialized = Lists.newArrayList();
+		CompoundNBT soulData = this.player.getPersistentData().getCompound("SoulboundItems");
+		int counter = soulData.getInt("StoredStacks")-1;
+
+		for (int c = counter; c >= 0; c--) {
+			CompoundNBT nbt = soulData.getCompound("Stack" + c);
+			ItemStack stack = ItemStack.read(nbt);
+
+			if (!stack.isEmpty()) {
+				deserialized.add(stack);
+			}
+
+			soulData.remove("storedStack" + c);
+		}
+
+		soulData.remove("SoulboundItems");
+		return deserialized;
+	}
+
+	private ItemStack itemEditor(ItemStack item)
 	{
 		int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
 		if(SoulboundGlobals.durabilityDrop)
@@ -98,8 +141,8 @@ public class SoulboundHandler
 
 				if(SoulboundGlobals.breakItemOnZeroDurability)
 				{
-					item.setDamage(0);
-					return ItemStack.EMPTY;
+					item.setDamage(item.getMaxDamage());
+					return item;
 				}
 				item.setDamage(item.getMaxDamage() - 1);
 			}
@@ -140,15 +183,19 @@ public class SoulboundHandler
 	}
 
 	public void transferItems() {
+		List<ItemStack> retainedDrops = this.deserializeDrops();
+
 		boolean breakonce = false;
-		if(this.finalItems.isEmpty())
+		if(retainedDrops.isEmpty())
 			return;
-		for (Object finalItem : this.finalItems) {
-			ItemStack item = (ItemStack) finalItem;
-			if(item == (ItemStack.EMPTY) && !breakonce)
-			{
-				this.player.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0f, 1.0f); // this line of code isn't working. THIS CODE NEEDS WORK
-				breakonce = true;
+		for (ItemStack item : retainedDrops) {
+			if(item.getDamage() == item.getMaxDamage()) {
+				if (breakonce) {
+					this.player.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0f, 1.0f); // this line of code isn't working. THIS CODE NEEDS WORK
+					breakonce = true;
+				}
+
+				continue;
 			}
 			this.player.inventory.addItemStackToInventory(item);
 		}

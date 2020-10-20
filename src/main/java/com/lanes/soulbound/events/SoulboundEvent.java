@@ -23,7 +23,7 @@ public class SoulboundEvent {
 	public static void retrievalEvent(LivingDropsEvent event) // runs second (before respawn)
 	{
 		if (event.getEntity() instanceof PlayerEntity) {
-			SoulboundHandler.getOrCreateSoulboundHandler((PlayerEntity) event.getEntityLiving()).filterEnchantment(event.getDrops());
+			SoulboundHandler.getOrCreateSoulboundHandler((PlayerEntity)event.getEntityLiving()).retainDrops(event.getDrops());
 		}
 
 	}
@@ -32,8 +32,8 @@ public class SoulboundEvent {
 	public static void itemTransferEvent(PlayerEvent.Clone event) // runs third (when respawned)
 	{
 		if (event.isWasDeath()) {
-			if (SoulboundHandler.hasActiveSoulboundHandler(event.getPlayer())) {
-				SoulboundHandler.getSoulboundHandler(event.getPlayer()).transferItems();
+			if (SoulboundHandler.hasStoredDrops(event.getPlayer())) {
+				SoulboundHandler.getOrCreateSoulboundHandler(event.getPlayer()).transferItems();
 			}
 		}
 	}
