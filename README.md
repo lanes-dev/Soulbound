@@ -4,7 +4,7 @@
 **Dependencies**: None
 
 
-**Current Version**: 1.1.0
+**Current Version**: 1.2.0
 
 
 **Minecraft Version**: 1.16.1 -> 1.16.3
