@@ -1,129 +1,183 @@
 package com.lanes.soulbound.util;
 
-import com.lanes.soulbound.config.SoulboundConfig;
-import com.lanes.soulbound.config.SoulboundGlobals;
+import com.google.common.collect.Lists;
+import com.lanes.soulbound.config.CommonConfig;
 import com.lanes.soulbound.lists.EnchantmentList;
-import net.minecraft.block.SoundType;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.stats.Stats;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundEvents;
-import net.minecraftforge.client.event.sound.SoundEvent;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class SoulboundHandler
-{
-    public static LivingEntity entity;
-    public ArrayList<ItemStack> finalItems = new ArrayList<>();
-    public ArrayList<ItemEntity> drops = new ArrayList<>();
+public class SoulboundHandler {
+	private static final HashMap<PlayerEntity, SoulboundHandler> handlerMap = new HashMap<>();
+	public static final String soulboundTag = "SoulboundItems";
+	public static final String storedStacksTag = "StoredStacks";
+	public static final String soundTag = "playBrokeSound";
+	public static final String stackTag = "Stack";
+	private final PlayerEntity player;
 
-    public SoulboundHandler(LivingEntity entity)
-    {
-        SoulboundHandler.entity = entity;
-    }
+	public static SoulboundHandler getOrCreateSoulboundHandler(PlayerEntity player) {
+		if (getSoulboundHandler(player) != null)
+			return getSoulboundHandler(player);
+		else
+			return createSoulboundHandler(player);
+	}
 
-    public void filterEnchantment(Collection<ItemEntity> retrievedDrops)
-    {
-        for(ItemEntity retrievedDrop : retrievedDrops)
-        {
-            ItemStack item = retrievedDrop.getItem();
-            if(item.isEnchanted() && EnchantmentHelper.getEnchantments(item).containsKey(EnchantmentList.SOULBOUND.get()))
-            {
-                int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
-                double chance = SoulboundGlobals.saveChance + (SoulboundGlobals.additiveSaveChance * (level - 1));
-                double rng = Math.random();
-                if(rng < chance)
-                {
-                    finalItems.add(itemEditor(item).copy());
-                    retrievedDrop.remove();
-                }
-            }
-        }
-    }
+	@Nullable
+	public static SoulboundHandler getSoulboundHandler(PlayerEntity player) {
+		return handlerMap.get(player);
+	}
 
-    public ItemStack itemEditor(ItemStack item)
-    {
-        int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
-        if(SoulboundGlobals.durabilityDrop)
-        {
-            double minimum = SoulboundGlobals.minimumDurabilityDrop - (SoulboundGlobals.additiveDurabilityDrop  * (level - 1));
-            if(minimum < 0) { minimum = 0; }
-            double maximum = SoulboundGlobals.maximumDurabilityDrop - (SoulboundGlobals.additiveDurabilityDrop  * (level - 1));
-            if(maximum < 0) { maximum = 0; }
-            double mode = SoulboundGlobals.modeDurabilityDrop - (SoulboundGlobals.additiveDurabilityDrop * (level - 1));
-            if(mode < 0) { mode = 0; }
+	public static SoulboundHandler createSoulboundHandler(PlayerEntity player) {
+		SoulboundHandler newHandler = new SoulboundHandler(player);
+		handlerMap.put(player, newHandler);
+		return newHandler;
+	}
 
-            int newDurability = (int) (item.getMaxDamage() * triangularDistribution(minimum, maximum, mode));
-            if(item.attemptDamageItem(newDurability, entity.getRNG(), (ServerPlayerEntity) entity))
-            {
-                if (entity instanceof PlayerEntity) {
-                    ((PlayerEntity)entity).addStat(Stats.ITEM_BROKEN.get(item.getItem()));
-                }
+	public static boolean hasStoredDrops(PlayerEntity player) {
+		return hasSerializedDrops(player);
+	}
 
-                if(SoulboundGlobals.breakItemOnZeroDurability)
-                {
-                    item.setDamage(0);
-                    return ItemStack.EMPTY;
-                }
-                item.setDamage(item.getMaxDamage() - 1);
-            }
+	private SoulboundHandler(PlayerEntity playerIn) {
+		this.player = playerIn;
+	}
 
-        }
-        double chance = SoulboundGlobals.dropLevel - (SoulboundGlobals.additiveDropChance * (level - 1));
-        if(!(Math.random() < chance))
-        {
-            return item;
-        }
-        if(level > 1)
-        {
-            Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(item);
-            enchantments.remove(EnchantmentList.SOULBOUND.get());
-            enchantments.put(EnchantmentList.SOULBOUND.get(), level - 1);
-            EnchantmentHelper.setEnchantments(enchantments, item);
-        }
-        else
-        {
-            Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(item);
-            enchantments.remove(EnchantmentList.SOULBOUND.get());
-            EnchantmentHelper.setEnchantments(enchantments, item);
-        }
-        return item;
-    }
+	public void retainDrops(Collection<ItemEntity> eventDrops) {
+		List<ItemEntity> retainedDrops = Lists.newArrayList();
+		for (ItemEntity eventDrop : eventDrops) {
+			ItemStack item = eventDrop.getItem();
+			if (item.isEnchanted() && EnchantmentHelper.getEnchantments(item).containsKey(EnchantmentList.SOULBOUND.get())) {
+				int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
+				double chance = CommonConfig.COMMON.saveChance.get() + (CommonConfig.COMMON.additiveSaveChance.get() * (level - 1));
+				double rng = Math.random();
+				if (rng < chance) {
+					retainedDrops.add(eventDrop);
+				}
+			}
+		}
 
-    public double triangularDistribution(double a, double b, double c) { // where a = min, b = max, c = mode
-        // 25 , 50, 33
-        double F = (c - a) / (b - a); // f = (.33 - .25) / (.50 - .25), f = .32
-        double rand = Math.random();
-        if (rand < F) { // assuming rand = .20
-            return a + Math.sqrt(rand * (b - a) * (c - a)); // RETURNS .25 + sqrt((.20 * (.50 - .25) * (.33 - .25)) .313 (Nearing .33 with larger values, with lesser values it nears .25)
-        } else { // assuming rand = .50
-            return b - Math.sqrt((1 - rand) * (b - a) * (b - c)); // RETURNS .50 - sqrt((1 - .50) * (.50 - .25) * (.50 - .33)) .354 (Nearing .33 with lesser values, with larger values it nears .50)
-        }
-    }
+		retainedDrops.forEach(dropItem -> {
+			eventDrops.remove(dropItem);
+		});
 
-    public void transferItems(PlayerEntity player)
-    {
-        boolean breakonce = false;
-        if(finalItems.isEmpty())
-        {
-            return;
-        }
-        for (Object finalItem : finalItems) {
-            ItemStack item = (ItemStack) finalItem;
-            if(item == (ItemStack.EMPTY) && !breakonce)
-            {
-                player.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0f, 1.0f); // this line of code isn't working. THIS CODE NEEDS WORK
-                breakonce = true;
-            }
-            player.inventory.addItemStackToInventory(item);
-        }
-    }
+		this.serializeDrops(retainedDrops);
+	}
+
+	private void serializeDrops(Collection<ItemEntity> drops) {
+		CompoundNBT soulData = new CompoundNBT();
+		soulData.putInt(storedStacksTag, drops.size());
+		int counter = 0;
+
+		for (ItemEntity drop : drops) {
+			ItemStack stack = this.itemEditor(drop.getItem()).copy();
+			if (stack != null) {
+				CompoundNBT serializedStack = stack.serializeNBT();
+				soulData.put(stackTag + counter, serializedStack);
+				counter++;
+			}
+		}
+
+		this.player.getPersistentData().put(soulboundTag, soulData);
+	}
+
+	private static boolean hasSerializedDrops(PlayerEntity player) {
+		return player.getPersistentData().contains(soulboundTag);
+	}
+
+	private List<ItemStack> deserializeDrops() {
+		List<ItemStack> deserialized = Lists.newArrayList();
+		CompoundNBT soulData = this.player.getPersistentData().getCompound(soulboundTag);
+		int counter = soulData.getInt(storedStacksTag) - 1;
+
+		for (int c = counter; c >= 0; c--) {
+			CompoundNBT nbt = soulData.getCompound(stackTag + c);
+			ItemStack stack = ItemStack.read(nbt);
+
+			if (!stack.isEmpty()) {
+				deserialized.add(stack);
+			}
+
+			soulData.remove(stackTag + c);
+		}
+
+		this.player.getPersistentData().remove(soulboundTag);
+		return deserialized;
+	}
+
+	private ItemStack itemEditor(ItemStack item) {
+		int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
+		if (CommonConfig.COMMON.durabilityDrop.get()) {
+			double minimum = CommonConfig.COMMON.minimumDurabilityDrop.get() - (CommonConfig.COMMON.additiveDurabilityDrop.get() * (level - 1));
+			if (minimum < 0) {
+				minimum = 0;
+			}
+			double maximum = CommonConfig.COMMON.maximumDurabilityDrop.get() - (CommonConfig.COMMON.additiveDurabilityDrop.get() * (level - 1));
+			if (maximum < 0) {
+				maximum = 0;
+			}
+			double mode = CommonConfig.COMMON.modeDurabilityDrop.get() - (CommonConfig.COMMON.additiveDurabilityDrop.get() * (level - 1));
+			if (mode < 0) {
+				mode = 0;
+			}
+
+			int newDurability = (int) (item.getMaxDamage() * this.triangularDistribution(minimum, maximum, mode));
+			if (item.attemptDamageItem(newDurability, this.player.getRNG(), (ServerPlayerEntity) this.player)) {
+				if (this.player instanceof PlayerEntity) {
+					this.player.addStat(Stats.ITEM_BROKEN.get(item.getItem()));
+				}
+
+				if (CommonConfig.COMMON.breakItemOnZeroDurability.get()) {
+					item.setDamage(item.getMaxDamage());
+					return item;
+				}
+				item.setDamage(item.getMaxDamage() - 1);
+			}
+
+		}
+		double chance = CommonConfig.COMMON.dropLevel.get() - (CommonConfig.COMMON.additiveDropChance.get() * (level - 1));
+		if (!(Math.random() < chance))
+			return item;
+		if (level > 1) {
+			Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(item);
+			enchantments.remove(EnchantmentList.SOULBOUND.get());
+			enchantments.put(EnchantmentList.SOULBOUND.get(), level - 1);
+			EnchantmentHelper.setEnchantments(enchantments, item);
+		} else {
+			Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(item);
+			enchantments.remove(EnchantmentList.SOULBOUND.get());
+			EnchantmentHelper.setEnchantments(enchantments, item);
+		}
+		return item;
+	}
+
+	public double triangularDistribution(double a, double b, double c) {
+		double F = (c - a) / (b - a);
+		double rand = Math.random();
+		if (rand < F)
+			return a + Math.sqrt(rand * (b - a) * (c - a));
+		else
+			return b - Math.sqrt((1 - rand) * (b - a) * (b - c));
+	}
+
+	public void transferItems(PlayerEntity rebornPlayer) {
+		List<ItemStack> retainedDrops = this.deserializeDrops();
+
+		if (retainedDrops.isEmpty())
+			return;
+		for (ItemStack item : retainedDrops) {
+			rebornPlayer.inventory.addItemStackToInventory(item);
+		}
+
+		handlerMap.remove(this.player);
+	}
 }

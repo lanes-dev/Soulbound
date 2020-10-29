@@ -1,6 +1,6 @@
 package com.lanes.soulbound.effects.enchantments;
 
-import com.lanes.soulbound.config.SoulboundGlobals;
+import com.lanes.soulbound.config.CommonConfig;
 import com.lanes.soulbound.lists.EnchantmentList;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentType;
@@ -16,7 +16,7 @@ public class EnchantmentSoulbound extends Enchantment {
     @Override
     public int getMaxLevel()
     {
-        return SoulboundGlobals.maximumLevel; // default 3
+        return CommonConfig.COMMON.maximumLevel.get();
     }
 
     @Override
@@ -27,12 +27,12 @@ public class EnchantmentSoulbound extends Enchantment {
 
     @Override
     public boolean isTreasureEnchantment() {
-        return !SoulboundGlobals.enchantable; // default true
+        return !CommonConfig.COMMON.enchantable.get();
     }
 
     @Override
     public boolean isAllowedOnBooks() {
-        return SoulboundGlobals.enchantableBooks; // default false
+        return CommonConfig.COMMON.enchantableBooks.get();
     }
 
     @Override
@@ -42,7 +42,7 @@ public class EnchantmentSoulbound extends Enchantment {
         {
             return false;
         }
-        if(SoulboundGlobals.cursesApplicable)
+        if(CommonConfig.COMMON.cursesApplicable.get())
         {
             return true;
         }
@@ -56,7 +56,7 @@ public class EnchantmentSoulbound extends Enchantment {
     @Override
     public int getMinEnchantability(int enchantmentLevel)
     {
-        return (int) ((SoulboundGlobals.rarity * 4 * enchantmentLevel) - 3);
+        return (int) ((CommonConfig.COMMON.rarity.get() * 4 * enchantmentLevel) - 3);
     }
 
     @Override
