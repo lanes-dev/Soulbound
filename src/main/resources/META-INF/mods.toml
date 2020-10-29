@@ -27,7 +27,7 @@ displayURL="https://www.curseforge.com/minecraft/mc-mods/vp-soulbound" #optional
 # A file name (in the root of the mod JAR) containing a logo for display
 logoFile="Soulbound.png" #optional
 # A text field displayed in the mod UI
-credits="lanes" #optional
+credits="lanes, Aizistral" #optional
 # A text field displayed in the mod UI
 authors="lanes" #optional
 # The description text for the mod (multi line!) (#mandatory)
@@ -36,7 +36,7 @@ Just a simple mod bringing Soulbound to 1.16.1 -> 1.16.3
 
 The enchantment is highly customizable in the config file to fit your needs! The default item is described below but things can be tweaked!
 
-Soulbound is an enchantment that can be applied to any enchantable item. It comes in levels 1, 2, and 3. Whenever the user dies with items containing Soulbound, the items will return to the user with -1 level eventually removing the enchantment from the item. The enchantment is found mostly in bastion remnant's and end cities. It cannot be accessed through traders like Mending can. This enchantment doesn't pair with any Curses.
+Soulbound is an enchantment that can be applied to any enchantable item. It comes in levels 1, 2, and 3. Whenever the user dies with items containing Soulbound, the items will return to the user with -1 level eventually removing the enchantment from the item.The enchantment is found mostly in bastion remnant's and end cities. It cannot be accessed through traders like Mending can. This enchantment doesn't pair with any Curses.
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.examplemod]] #optional

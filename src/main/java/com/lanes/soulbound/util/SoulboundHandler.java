@@ -13,10 +13,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.stats.Stats;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SoulboundHandler {
 	private static final HashMap<PlayerEntity, SoulboundHandler> handlerMap = new HashMap<>();
