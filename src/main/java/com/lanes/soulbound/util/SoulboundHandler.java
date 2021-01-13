@@ -1,7 +1,7 @@
 package com.lanes.soulbound.util;
 
 import com.google.common.collect.Lists;
-import com.lanes.soulbound.config.CommonConfig;
+import com.lanes.soulbound.config.SoulboundConfig;
 import com.lanes.soulbound.lists.EnchantmentList;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -55,7 +55,7 @@ public class SoulboundHandler {
 			ItemStack item = eventDrop.getItem();
 			if (item.isEnchanted() && EnchantmentHelper.getEnchantments(item).containsKey(EnchantmentList.SOULBOUND.get())) {
 				int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
-				double chance = CommonConfig.COMMON.saveChance.get() + (CommonConfig.COMMON.additiveSaveChance.get() * (level - 1));
+				double chance = SoulboundConfig.saveChance.get() + (SoulboundConfig.additiveSaveChance.get() * (level - 1));
 				double rng = Math.random();
 				if (rng < chance) {
 					retainedDrops.add(eventDrop);
@@ -113,16 +113,16 @@ public class SoulboundHandler {
 
 	private ItemStack itemEditor(ItemStack item) {
 		int level = EnchantmentHelper.getEnchantmentLevel(EnchantmentList.SOULBOUND.get(), item);
-		if (CommonConfig.COMMON.durabilityDrop.get()) {
-			double minimum = CommonConfig.COMMON.minimumDurabilityDrop.get() - (CommonConfig.COMMON.additiveDurabilityDrop.get() * (level - 1));
+		if (SoulboundConfig.durabilityDrop.get()) {
+			double minimum = SoulboundConfig.minimumDurabilityDrop.get() - (SoulboundConfig.additiveDurabilityDrop.get() * (level - 1));
 			if (minimum < 0) {
 				minimum = 0;
 			}
-			double maximum = CommonConfig.COMMON.maximumDurabilityDrop.get() - (CommonConfig.COMMON.additiveDurabilityDrop.get() * (level - 1));
+			double maximum = SoulboundConfig.maximumDurabilityDrop.get() - (SoulboundConfig.additiveDurabilityDrop.get() * (level - 1));
 			if (maximum < 0) {
 				maximum = 0;
 			}
-			double mode = CommonConfig.COMMON.modeDurabilityDrop.get() - (CommonConfig.COMMON.additiveDurabilityDrop.get() * (level - 1));
+			double mode = SoulboundConfig.modeDurabilityDrop.get() - (SoulboundConfig.additiveDurabilityDrop.get() * (level - 1));
 			if (mode < 0) {
 				mode = 0;
 			}
@@ -133,7 +133,7 @@ public class SoulboundHandler {
 					this.player.addStat(Stats.ITEM_BROKEN.get(item.getItem()));
 				}
 
-				if (CommonConfig.COMMON.breakItemOnZeroDurability.get()) {
+				if (SoulboundConfig.breakItemOnZeroDurability.get()) {
 					item.setDamage(item.getMaxDamage());
 					return item;
 				}
@@ -141,7 +141,7 @@ public class SoulboundHandler {
 			}
 
 		}
-		double chance = CommonConfig.COMMON.dropLevel.get() - (CommonConfig.COMMON.additiveDropChance.get() * (level - 1));
+		double chance = SoulboundConfig.dropLevel.get() - (SoulboundConfig.additiveDropChance.get() * (level - 1));
 		if (!(Math.random() < chance))
 			return item;
 		if (level > 1) {
